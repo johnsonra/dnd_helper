@@ -6,6 +6,7 @@ confirm-before-save workflow.
 
 from __future__ import annotations
 
+import re
 import json
 
 import streamlit as st
@@ -149,6 +150,47 @@ CREATURE_TYPES = [
 ]
 
 
+def _parse_int_prefix(s: str) -> int:
+    """Return the leading integer from a string like '135 (18d10+36)' or '17 (natural armor)'."""
+    m = re.match(r"(\d+)", str(s))
+    return int(m.group(1)) if m else 0
+
+
+def _parse_speed_ft(s: str) -> int:
+    """Return the first walking speed value in feet, e.g. '30 ft., swim 40 ft.' → 30."""
+    m = re.match(r"(\d+)", str(s))
+    return int(m.group(1)) if m else 30
+
+
+def _creature_as_npc_template(c: dict) -> dict:
+    """Convert a creature record into a pre-filled character form payload."""
+    return {
+        "name": c["name"],
+        "race": c.get("size", ""),        # e.g. "Large aberration"
+        "hp_max": _parse_int_prefix(c.get("hit_points", "0")),
+        "hp_current": _parse_int_prefix(c.get("hit_points", "0")),
+        "ac": _parse_int_prefix(c.get("armor_class", "10")),
+        "speed": _parse_speed_ft(c.get("speed", "30")),
+        "ability_scores": {
+            "STR": int(c.get("str_score", 10)),
+            "DEX": int(c.get("dex_score", 10)),
+            "CON": int(c.get("con_score", 10)),
+            "INT": int(c.get("int_score", 10)),
+            "WIS": int(c.get("wis_score", 10)),
+            "CHA": int(c.get("cha_score", 10)),
+        },
+        # Pre-fill notes with the creature's stat details and abilities
+        "notes": (
+            f"CR: {c.get('challenge', '')}\n"
+            f"Saving Throws: {c.get('saving_throws', '')}\n"
+            f"Skills: {c.get('skills', '')}\n"
+            f"Senses: {c.get('senses', '')}\n"
+            f"Languages: {c.get('languages', '')}\n\n"
+            + c.get("abilities", "")
+        ).strip(),
+    }
+
+
 def _creature_card(c: dict) -> None:
     st.markdown(f"### {c['name']}")
     st.caption(f"{c['size']} · {c['alignment']} · CR {c['challenge']}")
@@ -172,6 +214,10 @@ def _creature_card(c: dict) -> None:
         st.write(f"**Languages:** {c['languages']}")
     if c.get("abilities"):
         st.markdown(c["abilities"])
+    if st.button("🧑 Use as NPC / Character Template", key=f"npc_tmpl_{c['id']}"):
+        st.session_state["npc_template"] = _creature_as_npc_template(c)
+        st.session_state["pending_nav"] = "🧙 Characters"
+        st.rerun()
 
 
 def _spell_card(s: dict) -> None:

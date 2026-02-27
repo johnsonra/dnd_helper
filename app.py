@@ -59,6 +59,10 @@ with st.sidebar:
         "⚙️ Settings": "Settings",
     }
 
+    # Apply any pending navigation request before the radio widget is instantiated
+    if "pending_nav" in st.session_state:
+        st.session_state["nav_page"] = st.session_state.pop("pending_nav")
+
     page = st.radio("Navigation", list(PAGES.keys()), key="nav_page", label_visibility="collapsed")
     selected = PAGES[page]
 

@@ -24,7 +24,7 @@ SKILLS = [
 
 CLASSES = [
     "Artificer", "Barbarian", "Bard", "Cleric", "Druid", "Fighter",
-    "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard",
+    "Monk", "NPC/Monster", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard",
 ]
 
 ALIGNMENTS = [
@@ -171,6 +171,14 @@ def _skill_table(scores: dict, skill_profs: list, save_profs: list, level: int) 
 def render_character_sheet() -> None:
     st.header("🧙 Character Sheet")
 
+    # If a creature NPC template was loaded from the Database tab, show a banner.
+    npc_template = st.session_state.get("npc_template")
+    if npc_template:
+        st.info(
+            f"🧑 NPC template loaded from **{npc_template['name']}**. "
+            "Open the **➕ New** tab below to review and save."
+        )
+
     tab_list, tab_view, tab_edit, tab_new = st.tabs(
         ["📋 Characters", "👁️ View", "✏️ Edit", "➕ New"]
     )
@@ -294,13 +302,34 @@ def render_character_sheet() -> None:
 
     # ---- New character ----
     with tab_new:
-        _render_character_form(None, char_id=None)
+        npc_template = st.session_state.get("npc_template")
+        _render_character_form(None, char_id=None, npc_template=npc_template)
 
 
-def _render_character_form(existing: dict | None, char_id: int | None) -> None:
-    """Shared form for creating or editing a character."""
+def _render_character_form(existing: dict | None, char_id: int | None,
+                           npc_template: dict | None = None) -> None:
+    """Shared form for creating or editing a character.
+
+    When *npc_template* is provided (new character only), its values pre-fill
+    the form fields so the user can review and tweak before saving.
+    """
     prefix = f"char_{char_id or 'new'}_"
     e = existing or {}
+
+    # Merge NPC template into defaults for new characters
+    if npc_template and not existing:
+        e = {
+            "name":           npc_template.get("name", ""),
+            "race":           npc_template.get("race", ""),
+            "class":          "NPC/Monster",
+            "hp_max":         npc_template.get("hp_max", 0),
+            "hp_current":     npc_template.get("hp_current", 0),
+            "ac":             npc_template.get("ac", 10),
+            "speed":          npc_template.get("speed", 30),
+            "ability_scores": jdumps(npc_template.get("ability_scores", {})),
+            "notes":          npc_template.get("notes", ""),
+        }
+
     scores = jloads(e.get("ability_scores") or "{}")
     save_profs_existing = jloads(e.get("save_profs") or "[]")
     skill_profs_existing = jloads(e.get("skill_profs") or "[]")
@@ -425,5 +454,7 @@ def _render_character_form(existing: dict | None, char_id: int | None) -> None:
         }
         new_id = _save_character(payload, char_id=char_id)
         st.session_state["active_char_id"] = new_id
+        # Clear any NPC template that was used to pre-fill this form
+        st.session_state.pop("npc_template", None)
         st.success(f"✅ Character **{name}** saved!")
         st.rerun()
