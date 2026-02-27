@@ -408,11 +408,40 @@ def render_creature_database() -> None:
         c_type = sc3.selectbox("Type", CREATURE_TYPES, key="c_type")
 
         creatures = _search_creatures(c_query, c_cr, c_type)
-        st.caption(f"{len(creatures)} result(s)")
+        total = len(creatures)
 
-        for c in creatures:
+        # Pagination controls
+        pg_col1, pg_col2 = st.columns([3, 1])
+        pg_col1.caption(f"{total} result(s)")
+        page_size = pg_col2.selectbox(
+            "Per page", [25, 50, 100], index=1, key="c_page_size", label_visibility="collapsed"
+        )
+
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        # Reset page when filters change
+        filter_key = (c_query, c_cr, c_type, page_size)
+        if st.session_state.get("_c_filter_key") != filter_key:
+            st.session_state["_c_filter_key"] = filter_key
+            st.session_state["c_page"] = 1
+        page = st.session_state.get("c_page", 1)
+
+        start = (page - 1) * page_size
+        page_creatures = creatures[start : start + page_size]
+
+        for c in page_creatures:
             with st.expander(f"**{c['name']}** – {c['size']} · CR {c['challenge']}"):
                 _creature_card(c)
+
+        # Page navigation
+        if total_pages > 1:
+            nav1, nav2, nav3 = st.columns([1, 2, 1])
+            if nav1.button("◀ Prev", key="c_prev", disabled=page <= 1):
+                st.session_state["c_page"] = page - 1
+                st.rerun()
+            nav2.markdown(f"<div style='text-align:center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
+            if nav3.button("Next ▶", key="c_next", disabled=page >= total_pages):
+                st.session_state["c_page"] = page + 1
+                st.rerun()
 
     # ==== Spells ====
     with tab_spell:
