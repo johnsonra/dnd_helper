@@ -1,0 +1,13 @@
+I'm planning a streamlit app to use as a DnD helper. The app will have the following features:
+
+1. Character Sheet Generator: Users can input their character details (name, class, race, background, spells, items carried, etc.) and the app will generate a character sheet with all the relevant stats and information. Characters can be saved and edited throughout a campaign.
+
+2. Dice Roller: A built-in dice roller that allows users to roll various types of dice (d4, d6, d8, d10, d12, d20) with customizable modifiers and options for advantage/disadvantage rolls. This should include a button to roll for each specific action available to the character being viewed (e.g. attack rolls, saving throws) and display the results in a clear and organized manner.
+
+3. Encounter Builder: A tool for Dungeon Masters to create and manage encounters, including adding monsters, NPCs, and environmental factors. The encounter builder will also calculate initiative order and track hit points for all participants. This should interface with Google Gemini to provide dynamic content and suggestions based on the encounter details (the user will be prompted for an API key to access Google Gemini).
+
+4. Campaign Tracker: A feature that allows users to keep track of their campaign progress, including quests, locations, relevant NPCs, and important events. Users can also upload maps and images related to their campaign.
+
+5. Spell, Creature and Item Database: A comprehensive database of spells, creatrues and items that users can reference while playing. This will include descriptions, effects, and any relevant rules for each spell, creature or item. The database can be initialized using data found in the `bestiary` submodule associated with this repository. It should include the ability to look up specific spells, creatures and items that might not be included in the app's database, using Google Gemini to provide dynamic content based on user queries. When importing data from Gemini, the app should provide a standard format (e.g. something in JSON) to Gemini so the information can be imported into the app's database. When data are collected from Gemini, the user should be prompted to confirm the accuracy of the information before it is added to the database and should be given the option to edit the information before it is added to the database.
+
+This app will be built using Streamlit for the frontend, and Python for the backend logic. The character sheet generator, dice roller, encounter builder, campaign tracker, and database will all be implemented as separate modules within the app. The integration with Google Gemini will allow for dynamic content generation based on user input, enhancing the overall user experience.
