@@ -23,8 +23,10 @@ def _search_creatures(query: str = "", cr: str = "", creature_type: str = "") ->
         sql += " AND name LIKE ?"
         params.append(f"%{query}%")
     if cr:
-        sql += " AND challenge LIKE ?"
-        params.append(f"%{cr}%")
+        # Anchor to the start of the challenge string (e.g. "5 (1,800 XP)")
+        # so CR 5 doesn't match XP values containing "5" or fractions like "1/4".
+        sql += " AND (challenge = ? OR challenge LIKE ?)"
+        params.extend([cr, f"{cr} (%"])
     if creature_type:
         sql += " AND (size LIKE ? OR tags LIKE ?)"
         params.extend([f"%{creature_type}%", f"%{creature_type}%"])
